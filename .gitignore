@@ -1,0 +1,43 @@
+# Rust build artifacts
+/target/
+
+# Rust dependency lock file
+Cargo.lock
+
+# Environment variables file
+.env
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*~
+
+# Log files
+*.log
+
+# Any compiled binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Python virtual environment (if you're using any Python scripts alongside)
+venv/
+__pycache__/
+
+# Any local configuration files
+*.local
+
+# Temporary files
+*.tmp
+*.bak
+
+**/*.rs.bk
