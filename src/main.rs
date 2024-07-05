@@ -49,7 +49,7 @@ impl FromRequest for ApiKey {
 
         match api_key {
             Some(key) => ready(Ok(ApiKey(key))),
-            None => ready(Err(ActixError::from(HttpResponse::Unauthorized().finish()))),
+            None => ready(Err(actix_web::error::ErrorUnauthorized("Missing API key"))),
         }
     }
 }
