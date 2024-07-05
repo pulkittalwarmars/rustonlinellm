@@ -9,7 +9,7 @@ use log::{info, error}; // Import logging macros
 use env_logger; // Import the env_logger crate for initialization
 
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]  // Added Debug here
 struct ChatCompletionRequest {
     model: String,
     messages: Vec<Message>,
