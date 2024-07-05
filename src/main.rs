@@ -15,7 +15,7 @@ struct ChatCompletionRequest {
     messages: Vec<Message>,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]  // Added Debug here
 struct Message {
     role: String,
     content: String,
