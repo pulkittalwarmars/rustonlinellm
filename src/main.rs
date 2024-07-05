@@ -158,16 +158,30 @@ async fn chat_completions(req: web::Json<ChatCompletionRequest>, api_key: ApiKey
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("Starting application...");
     dotenv().ok();
-    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    
+    let port = env::var("PORT").unwrap_or_else(|_| {
+        println!("PORT not set, defaulting to 8080");
+        "8080".to_string()
+    });
     let address = format!("0.0.0.0:{}", port);
-    println!("Server running at http://{}", address);
-    HttpServer::new(|| {
+    println!("Attempting to bind to address: {}", address);
+
+    match HttpServer::new(|| {
         App::new()
             .route("/openai/deployments/{model_name}/chat/completions",
                 web::post().to(chat_completions))
+    
     })
-    .bind(address)?
-    .run()
-    .await
+    .bind(&address) {
+        Ok(server) => {
+            println!("Successfully bound to address: {}", address);
+            server.run().await
+        },
+        Err(e) => {
+            eprintln!("Failed to bind to address: {}. Error: {}", address, e);
+            Err(e)
+        }
+    }
 }
