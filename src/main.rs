@@ -159,6 +159,11 @@ async fn chat_completions(req: web::Json<ChatCompletionRequest>, api_key: ApiKey
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting application...");
+    println!("Current working directory: {:?}", std::env::current_dir());
+    for (key, value) in std::env::vars() {
+        println!("{}: {}", key, value);
+    }
+
     dotenv().ok();
     
     let port = env::var("PORT").unwrap_or_else(|_| {
