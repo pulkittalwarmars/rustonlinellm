@@ -1,10 +1,10 @@
-use actix_web::{web, App, HttpServer, Responder, HttpResponse};
+use actix_web::{web, App, HttpServer, Responder, HttpResponse, dev::Payload, Error as ActixError, FromRequest, HttpRequest};
 use serde::{Deserialize, Serialize};
 use reqwest::Client;
 use scraper::{Html, Selector};
 use dotenv::dotenv;
 use std::env;
-use actix_web::http::header::HeaderValue;
+use futures::future::{ready, Ready};
 
 #[derive(Deserialize)]
 struct ChatCompletionRequest {
@@ -34,6 +34,26 @@ struct Choice {
     finish_reason: String,
 }
 
+struct ApiKey(String);
+
+impl FromRequest for ApiKey {
+    type Error = ActixError;
+    type Future = Ready<Result<Self, Self::Error>>;
+
+    fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
+        let api_key = req
+            .headers()
+            .get("api-key")
+            .and_then(|h| h.to_str().ok())
+            .map(String::from);
+
+        match api_key {
+            Some(key) => ready(Ok(ApiKey(key))),
+            None => ready(Err(ActixError::from(HttpResponse::Unauthorized().finish()))),
+        }
+    }
+}
+
 async fn web_search(query: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let client = Client::new();
     let url = format!("https://html.duckduckgo.com/html/?q={}", query);
@@ -51,13 +71,13 @@ async fn web_search(query: &str) -> Result<Vec<String>, Box<dyn std::error::Erro
     Ok(results)
 }
 
-fn verify_api_key(api_key: &actix_web::http::header::HeaderValue) -> bool {
+fn verify_api_key(api_key: &str) -> bool {
     let valid_key = std::env::var("AZURE_OPENAI_KEY").expect("AZURE_OPENAI_KEY not set");
-    api_key.to_str().unwrap_or("") == valid_key
+    api_key == valid_key
 }
 
-async fn chat_completions(req: web::Json<ChatCompletionRequest>, api_key: web::Header<actix_web::http::header::HeaderValue>) -> impl Responder {
-    if !verify_api_key(api_key.as_ref()) {
+async fn chat_completions(req: web::Json<ChatCompletionRequest>, api_key: ApiKey) -> impl Responder {
+    if !verify_api_key(&api_key.0) {
         return HttpResponse::Unauthorized().json(serde_json::json!({
             "error": {
                 "message": "Invalid API key",
