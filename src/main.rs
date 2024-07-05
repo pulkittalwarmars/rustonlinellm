@@ -50,13 +50,13 @@ async fn web_search(query: &str) -> Result<Vec<String>, Box<dyn std::error::Erro
     Ok(results)
 }
 
-fn verify_api_key(api_key: &str) -> bool {
+fn verify_api_key(api_key: &actix_web::http::header::HeaderValue) -> bool {
     let valid_key = std::env::var("AZURE_OPENAI_KEY").expect("AZURE_OPENAI_KEY not set");
-    api_key == valid_key
+    api_key.to_str().unwrap_or("") == valid_key
 }
 
 async fn chat_completions(req: web::Json<ChatCompletionRequest>, api_key: web::Header<String>) -> impl Responder {
-    if !verify_api_key(api_key.as_str()) {
+    if !verify_api_key(api_key.as_ref()) {
         return HttpResponse::Unauthorized().json(serde_json::json!({
             "error": {
                 "message": "Invalid API key",
@@ -144,7 +144,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .route("/openai/deployments/{model_name}/chat/completions", 
-                   web::post().to(|req: web::Json<ChatCompletionRequest>, api_key: web::Header<String>| 
+                    web::post().to(|req: web::Json<ChatCompletionRequest>, api_key: web::Header<actix_web::http::header::HeaderValue>|
+
                        chat_completions(req, api_key)))
     })
     .bind(address)?
