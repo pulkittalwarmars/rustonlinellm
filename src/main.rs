@@ -168,16 +168,26 @@ async fn main() -> std::io::Result<()> {
     let address = format!("0.0.0.0:{}", port);
     println!("Attempting to bind to address: {}", address);
 
+    // Log environment variables 
+    println!("AZURE_OPENAI_ENDPOINT: {}", env::var("AZURE_OPENAI_ENDPOINT").unwrap_or_else(|_| "Not set".to_string()));
+    println!("AZURE_OPENAI_DEPLOYMENT_NAME: {}", env::var("AZURE_OPENAI_DEPLOYMENT_NAME").unwrap_or_else(|_| "Not set".to_string()));
+    println!("AZURE_OPENAI_API_VERSION: {}", env::var("AZURE_OPENAI_API_VERSION").unwrap_or_else(|_| "Not set".to_string()));
+
     match HttpServer::new(|| {
         App::new()
             .route("/openai/deployments/{model_name}/chat/completions",
                 web::post().to(chat_completions))
-    
     })
     .bind(&address) {
         Ok(server) => {
             println!("Successfully bound to address: {}", address);
-            server.run().await
+            match server.run().await {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    eprintln!("Server error: {}", e);
+                    Err(e)
+                }
+            }
         },
         Err(e) => {
             eprintln!("Failed to bind to address: {}. Error: {}", address, e);
