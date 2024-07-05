@@ -80,17 +80,13 @@ fn verify_api_key(api_key: &str) -> bool {
 }
 
 async fn chat_completions(req: web::Json<ChatCompletionRequest>, api_key: ApiKey) -> impl Responder {
+    log::info!("Received request: {:?}", req);
     if !verify_api_key(&api_key.0) {
+        log::error!("Invalid API key: {}", api_key.0);
         return HttpResponse::Unauthorized().json(serde_json::json!({
-            "error": {
-                "message": "Invalid API key",
-                "type": "invalid_request_error",
-                "param": null,
-                "code": null
-            }
+            "error": "Invalid API key"
         }));
     }
-
     let user_message = req.messages.last().unwrap().content.clone();
     let mut messages = req.messages.clone();
 
