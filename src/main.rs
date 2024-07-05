@@ -160,12 +160,21 @@ async fn chat_completions(req: web::Json<ChatCompletionRequest>, api_key: ApiKey
 async fn main() -> std::io::Result<()> {
     println!("Starting application...");
     println!("Current working directory: {:?}", std::env::current_dir());
+
+    // Set up panic hook for logging unhandled errors
+    std::panic::set_hook(Box::new(|panic_info| {
+        eprintln!("Application panicked: {:?}", panic_info);
+    }));
+
+    // Load environment variables
+    dotenv().ok();
+
+    // Log all environment variables (be careful not to log sensitive information in production)
     for (key, value) in std::env::vars() {
         println!("{}: {}", key, value);
     }
 
-    dotenv().ok();
-    
+    // Get port from environment variable or use default
     let port = env::var("PORT").unwrap_or_else(|_| {
         println!("PORT not set, defaulting to 8080");
         "8080".to_string()
@@ -173,11 +182,7 @@ async fn main() -> std::io::Result<()> {
     let address = format!("0.0.0.0:{}", port);
     println!("Attempting to bind to address: {}", address);
 
-    // Log environment variables 
-    println!("AZURE_OPENAI_ENDPOINT: {}", env::var("AZURE_OPENAI_ENDPOINT").unwrap_or_else(|_| "Not set".to_string()));
-    println!("AZURE_OPENAI_DEPLOYMENT_NAME: {}", env::var("AZURE_OPENAI_DEPLOYMENT_NAME").unwrap_or_else(|_| "Not set".to_string()));
-    println!("AZURE_OPENAI_API_VERSION: {}", env::var("AZURE_OPENAI_API_VERSION").unwrap_or_else(|_| "Not set".to_string()));
-
+    // Start the HTTP server
     match HttpServer::new(|| {
         App::new()
             .route("/openai/deployments/{model_name}/chat/completions",
@@ -186,13 +191,7 @@ async fn main() -> std::io::Result<()> {
     .bind(&address) {
         Ok(server) => {
             println!("Successfully bound to address: {}", address);
-            match server.run().await {
-                Ok(_) => Ok(()),
-                Err(e) => {
-                    eprintln!("Server error: {}", e);
-                    Err(e)
-                }
-            }
+            server.run().await
         },
         Err(e) => {
             eprintln!("Failed to bind to address: {}. Error: {}", address, e);
