@@ -109,10 +109,10 @@ async fn chat_completions(req: web::Json<ChatCompletionRequest>, api_key: ApiKey
     }
 
     let client = Client::new();
-    let azure_endpoint = std::env::var("AZURE_OPENAI_ENDPOINT").expect("AZURE_OPENAI_ENDPOINT not set");
-    let azure_key = std::env::var("AZURE_OPENAI_KEY").expect("AZURE_OPENAI_KEY not set");
-    let deployment_name = std::env::var("AZURE_OPENAI_DEPLOYMENT_NAME").expect("AZURE_OPENAI_DEPLOYMENT_NAME not set");
-    let api_version = std::env::var("AZURE_OPENAI_API_VERSION").expect("AZURE_OPENAI_API_VERSION not set");
+    let azure_endpoint = env::var("AZURE_OPENAI_ENDPOINT").expect("AZURE_OPENAI_ENDPOINT not set");
+    let azure_key = env::var("AZURE_OPENAI_KEY").expect("AZURE_OPENAI_KEY not set");
+    let deployment_name = env::var("AZURE_OPENAI_DEPLOYMENT_NAME").expect("AZURE_OPENAI_DEPLOYMENT_NAME not set");
+    let api_version = env::var("AZURE_OPENAI_API_VERSION").expect("AZURE_OPENAI_API_VERSION not set");
 
     let url = format!("{}/openai/deployments/{}/chat/completions?api-version={}", azure_endpoint, deployment_name, api_version);
 
