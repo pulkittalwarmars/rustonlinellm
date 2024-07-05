@@ -5,6 +5,9 @@ use scraper::{Html, Selector};
 use dotenv::dotenv;
 use std::env;
 use futures::future::{ready, Ready};
+use log::{info, error}; // Import logging macros
+use env_logger; // Import the env_logger crate for initialization
+
 
 #[derive(Deserialize)]
 struct ChatCompletionRequest {
@@ -158,43 +161,31 @@ async fn chat_completions(req: web::Json<ChatCompletionRequest>, api_key: ApiKey
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Starting application...");
-    println!("Current working directory: {:?}", std::env::current_dir());
+    env_logger::init();  // Initializes the logger
 
-    // Set up panic hook for logging unhandled errors
-    std::panic::set_hook(Box::new(|panic_info| {
-        eprintln!("Application panicked: {:?}", panic_info);
-    }));
+    info!("Starting application...");
+    info!("Current working directory: {:?}", std::env::current_dir());
 
-    // Load environment variables
     dotenv().ok();
 
-    // Log all environment variables (be careful not to log sensitive information in production)
-    for (key, value) in std::env::vars() {
-        println!("{}: {}", key, value);
-    }
-
-    // Get port from environment variable or use default
     let port = env::var("PORT").unwrap_or_else(|_| {
-        println!("PORT not set, defaulting to 8080");
+        info!("PORT not set, defaulting to 8080");
         "8080".to_string()
     });
     let address = format!("0.0.0.0:{}", port);
-    println!("Attempting to bind to address: {}", address);
+    info!("Attempting to bind to address: {}", address);
 
-    // Start the HTTP server
     match HttpServer::new(|| {
         App::new()
-            .route("/openai/deployments/{model_name}/chat/completions",
-                web::post().to(chat_completions))
+            .route("/openai/deployments/{model_name}/chat/completions", web::post().to(chat_completions))
     })
     .bind(&address) {
         Ok(server) => {
-            println!("Successfully bound to address: {}", address);
+            info!("Successfully bound to address: {}", address);
             server.run().await
         },
         Err(e) => {
-            eprintln!("Failed to bind to address: {}. Error: {}", address, e);
+            error!("Failed to bind to address: {}. Error: {}", address, e);
             Err(e)
         }
     }
