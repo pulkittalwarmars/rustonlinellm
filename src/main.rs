@@ -157,7 +157,7 @@ async fn chat_completions(req: web::Json<ChatCompletionRequest>, api_key: ApiKey
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init();  // Initializes the logger
+    env_logger::init();
 
     info!("Starting application...");
     info!("Current working directory: {:?}", std::env::current_dir());
@@ -168,20 +168,32 @@ async fn main() -> std::io::Result<()> {
         info!("PORT not set, defaulting to 8080");
         "8080".to_string()
     });
-    let address = format!("0.0.0.0:{}", port);
-    info!("Attempting to bind to address: {}", address);
+
+    info!("Attempting to bind to address: 0.0.0.0:{}", port);
+
+    let azure_key = env::var("AZURE_OPENAI_KEY").unwrap_or_else(|e| {
+        error!("AZURE_OPENAI_KEY not set: {}", e);
+        panic!("AZURE_OPENAI_KEY not set");
+    });
+
+    let azure_endpoint = env::var("AZURE_OPENAI_ENDPOINT").unwrap_or_else(|e| {
+        error!("AZURE_OPENAI_ENDPOINT not set: {}", e);
+        panic!("AZURE_OPENAI_ENDPOINT not set");
+    });
+
+    info!("Starting Actix Web Server...");
 
     match HttpServer::new(|| {
         App::new()
             .route("/openai/deployments/{model_name}/chat/completions", web::post().to(chat_completions))
     })
-    .bind(&address) {
+    .bind(("0.0.0.0", port.parse().unwrap())) {
         Ok(server) => {
-            info!("Successfully bound to address: {}", address);
+            info!("Successfully bound to address: 0.0.0.0:{}", port);
             server.run().await
         },
         Err(e) => {
-            error!("Failed to bind to address: {}. Error: {}", address, e);
+            error!("Failed to bind to address: 0.0.0.0:{}. Error: {}", port, e);
             Err(e)
         }
     }
